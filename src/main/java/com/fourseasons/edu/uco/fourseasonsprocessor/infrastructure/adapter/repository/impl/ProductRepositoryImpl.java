@@ -22,4 +22,9 @@ public class ProductRepositoryImpl implements ProductRepository {
         return productMapper.toDomains(productEntities);
     }
 
+    @Override
+    public Product save(Product product) {
+        ProductEntity productEntity = productMapper.toEntity(product);
+        return productMapper.toDomain(productRepositoryJpa.save(productEntity));
+    }
 }

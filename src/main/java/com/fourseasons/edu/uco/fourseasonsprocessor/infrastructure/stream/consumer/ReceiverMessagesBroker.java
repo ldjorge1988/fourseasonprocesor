@@ -2,12 +2,11 @@ package com.fourseasons.edu.uco.fourseasonsprocessor.infrastructure.stream.consu
 
 
 import com.fourseasons.edu.uco.fourseasonsprocessor.application.dto.ProductDTO;
+import com.fourseasons.edu.uco.fourseasonsprocessor.application.service.product.ApplicationSaveProductService;
 import com.fourseasons.edu.uco.fourseasonsprocessor.infrastructure.util.gson.MapperJsonObjeto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
-
-import java.util.Optional;
 
 
 @Slf4j
@@ -16,19 +15,23 @@ public class ReceiverMessagesBroker {
 
     private final MapperJsonObjeto mapperJsonObjeto;
 
-    public ReceiverMessagesBroker(MapperJsonObjeto mapperJsonObjeto) {
-        this.mapperJsonObjeto = mapperJsonObjeto;
-    }
+    private final ApplicationSaveProductService saveProductService;
 
+    public ReceiverMessagesBroker(MapperJsonObjeto mapperJsonObjeto, ApplicationSaveProductService saveProductService) {
+        this.mapperJsonObjeto = mapperJsonObjeto;
+        this.saveProductService = saveProductService;
+    }
 
     @RabbitListener(queues = "${client.queue-recibir.cliente.queue-name}")
     public void receiveMessageProcessClient(String message) {
         log.debug("mensaje recibido: {}", message);
     }
 
-    private Optional<ProductDTO> obtenerObjetoDeMensaje(String mensaje) {
+    private ProductDTO obtenerObjetoDeMensaje(String mensaje) {
         log.info("obtener objeto mensaje");
-        return mapperJsonObjeto.ejecutar(mensaje, ProductDTO.class);
+        ProductDTO productDTO = mapperJsonObjeto.ejecutar(mensaje, ProductDTO.class).get();
+        saveProductService.execute(productDTO);
+        return productDTO;
     }
 
 
